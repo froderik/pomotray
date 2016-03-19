@@ -7,7 +7,7 @@ application = Qt::Application.new ARGV
 
 
 class Pomotray < Qt::SystemTrayIcon
-  slots :tick
+  slots :tick, :start, :pause, :reset
   
   def initialize
     super tomato
@@ -16,11 +16,8 @@ class Pomotray < Qt::SystemTrayIcon
     @timer.set_interval 1000
 
     self.connect @timer, SIGNAL( :timeout ), self, SLOT( :tick )
-    
-    @seconds_elapsed = 0
-    @count_down_minutes = 25
-    update_minutes
-    @timer.start
+
+    reset_numbers
     show
   end
 
@@ -32,13 +29,24 @@ class Pomotray < Qt::SystemTrayIcon
     Qt::Icon.new 'tomato.png'
   end
 
+  def reset_numbers
+    @seconds_elapsed = 0
+    @count_down_minutes = 25    
+    update_minutes
+  end
+
   def menu
     # need a window to make the menu happy
     window = Qt::MainWindow.new
     Qt::Menu.new( window ) do |menu|
-      menu.add_action 'start'
-      menu.add_action 'stop'
-      menu.add_action 'pause'
+      start_action = menu.add_action 'start'
+      connect start_action, SIGNAL( :triggered ), self, SLOT( :start )
+      
+      reset_action = menu.add_action 'reset'
+      connect reset_action, SIGNAL( :triggered ), self, SLOT( :reset )
+      
+      pause_action = menu.add_action 'pause'
+      connect pause_action, SIGNAL( :triggered ), self, SLOT( :pause )
     end
   end
 
@@ -49,6 +57,19 @@ class Pomotray < Qt::SystemTrayIcon
   def tick
     @seconds_elapsed += 1
     update_minutes
+  end
+
+  def start
+    @timer.start
+  end
+
+  def pause
+    @timer.stop
+  end
+
+  def reset
+    @timer.stop
+    reset_numbers
   end
 end
 
