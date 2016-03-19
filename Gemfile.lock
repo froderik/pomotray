@@ -1,0 +1,10 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    qtbindings (4.8.6.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  qtbindings
