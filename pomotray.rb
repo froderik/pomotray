@@ -22,7 +22,7 @@ class Pomotray < Qt::SystemTrayIcon
   end
 
   def update_minutes
-    self.set_tool_tip "#{seconds_left/60}:#{seconds_left%60}"
+    self.set_tool_tip "#{minutes_left}:#{seconds_left%60}"
   end
 
   def tomato
@@ -39,24 +39,40 @@ class Pomotray < Qt::SystemTrayIcon
     # need a window to make the menu happy
     window = Qt::MainWindow.new
     Qt::Menu.new( window ) do |menu|
-      start_action = menu.add_action 'start'
-      connect start_action, SIGNAL( :triggered ), self, SLOT( :start )
-      
-      reset_action = menu.add_action 'reset'
-      connect reset_action, SIGNAL( :triggered ), self, SLOT( :reset )
-      
-      pause_action = menu.add_action 'pause'
-      connect pause_action, SIGNAL( :triggered ), self, SLOT( :pause )
+      menu_item menu, :start
+      menu_item menu, :reset
+      menu_item menu, :pause
     end
+  end
+
+  def menu_item menu, name
+    menu_action = menu.add_action name.to_s
+    connect menu_action, SIGNAL( :triggered ), self, SLOT( name )
   end
 
   def seconds_left
     @count_down_minutes * 60 - @seconds_elapsed
   end
 
+  def minutes_left
+    seconds_left/60
+  end
+
   def tick
     @seconds_elapsed += 1
     update_minutes
+    if done?
+      show_time_is_up_message
+      reset_numbers
+    end
+  end
+
+  def show_time_is_up_message
+    show_message 'Time is up', 'Take a break'
+  end
+
+  def done?
+    @seconds_elapsed > @count_down_minutes * 60
   end
 
   def start
