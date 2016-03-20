@@ -5,49 +5,50 @@ require 'Qt'
 Qt::Application::set_style 'plastique'
 application = Qt::Application.new ARGV
 
+class PomotrayMenu < Qt::Menu
+  def initialize slot_machine
+    super invisible_window
+    @slot_machine = slot_machine
+    add_menu_item :start
+    add_menu_item :reset
+    add_menu_item :pause
+  end
+
+  def add_menu_item name
+    menu_action = add_action name.to_s
+    connect menu_action, SIGNAL( :triggered ), @slot_machine, SLOT( name )
+  end
+
+  def invisible_window
+    Qt::MainWindow.new
+  end
+end
+
+class Pomotimer < Qt::Timer
+  def initialize interval, tickable
+    super()
+    set_interval 1000
+    self.connect self, SIGNAL( :timeout ), tickable, SLOT( :tick )
+  end
+end
 
 class Pomotray < Qt::SystemTrayIcon
   slots :tick, :start, :pause, :reset
   
   def initialize
     super tomato
-    self.context_menu = menu
-    @timer = Qt::Timer.new
-    @timer.set_interval 1000
-
-    self.connect @timer, SIGNAL( :timeout ), self, SLOT( :tick )
-
+    @timer = Pomotimer.new 1000, self
+    self.context_menu = PomotrayMenu.new self
     reset_numbers
     show
-  end
-
-  def update_minutes
-    self.set_tool_tip "#{minutes_left}:#{'%02d' % (seconds_left%60)}"
   end
 
   def tomato
     Qt::Icon.new 'tomato.png'
   end
 
-  def reset_numbers
-    @seconds_elapsed = 0
-    @count_down_minutes = 25    
-    update_minutes
-  end
-
-  def menu
-    # need a window to make the menu happy
-    window = Qt::MainWindow.new
-    Qt::Menu.new( window ) do |menu|
-      menu_item menu, :start
-      menu_item menu, :reset
-      menu_item menu, :pause
-    end
-  end
-
-  def menu_item menu, name
-    menu_action = menu.add_action name.to_s
-    connect menu_action, SIGNAL( :triggered ), self, SLOT( name )
+  def printable_time_left
+    "#{minutes_left}:#{'%02d' % (seconds_left % 60)}"
   end
 
   def seconds_left
@@ -58,12 +59,22 @@ class Pomotray < Qt::SystemTrayIcon
     seconds_left/60
   end
 
+  def update_minutes
+    self.set_tool_tip printable_time_left
+  end
+
+  def reset_numbers
+    @seconds_elapsed = 0
+    @count_down_minutes = 25
+    update_minutes
+  end
+
   def tick
     @seconds_elapsed += 1
     update_minutes
     if done?
       show_time_is_up_message
-      reset_numbers
+      reset
     end
   end
 
