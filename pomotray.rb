@@ -22,7 +22,7 @@ class Pomotray < Qt::SystemTrayIcon
   end
 
   def update_minutes
-    self.set_tool_tip "#{minutes_left}:#{seconds_left%60}"
+    self.set_tool_tip "#{minutes_left}:#{'%02d' % (seconds_left%60)}"
   end
 
   def tomato
